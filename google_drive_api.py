@@ -67,7 +67,7 @@ class Project_Gdrive():
             return print('directories has been Created')
     
     ### Get or Update File List in Fodler Name
-    def GetFile_FromFolder(self,folder_name):
+    def GetFile_FromFolderName(self,folder_name):
         All_file_in_folder = {}
         folder_id = self.data['Folder_Id'][folder_name]
         file_list = drive.ListFile({'q': folder_id}).GetList()
@@ -98,6 +98,9 @@ class Project_Gdrive():
 
 if __name__ == '__main__':
     
+
     project = Project_Gdrive("diseno001")
     project.SetUp_Gdrive_Directory()
     project.Save_Json_Config()
+
+    ##modified working with subfolder
