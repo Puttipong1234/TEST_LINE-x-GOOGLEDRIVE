@@ -1,0 +1,25 @@
+{
+    "Create_directory": "False",
+    "Public_Folder": [
+        "projectinfo",
+        "drawing",
+        "todayreport",
+        "projectstaff",
+        "material"
+    ],
+    "Private_Folder": [
+        "payment",
+        "approval",
+        "quotation"
+    ],
+    "Folder_Id": {
+        "projectinfo": "",
+        "drawing": "",
+        "todayreport": "",
+        "projectstaff": "",
+        "material": "",
+        "payment": "",
+        "approval": "",
+        "quotation": ""
+    }
+}
