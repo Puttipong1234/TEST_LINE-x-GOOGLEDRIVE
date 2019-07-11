@@ -1,10 +1,7 @@
-import json
-data = ""
+def a(x,y):
+    b = x+y
+    c = x-y
+    return b , c
 
-with open('Gdrive_Config.json','r') as Config:
-    data = json.load(Config)
-    data['Folder_Id']['projectinfo']='book'
-    Config.close()
-with open('Gdrive_Config.json','w') as Config:
-    json.dump(data,Config)
-    Config.close()
+aa,bb = a(10,9)
+print(aa,bb)

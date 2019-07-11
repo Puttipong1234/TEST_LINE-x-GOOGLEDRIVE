@@ -1,25 +1,29 @@
 {
-    "Create_directory": "False",
-    "Public_Folder": [
-        "projectinfo",
-        "drawing",
-        "todayreport",
-        "projectstaff",
-        "material"
-    ],
-    "Private_Folder": [
-        "payment",
-        "approval",
-        "quotation"
-    ],
-    "Folder_Id": {
-        "projectinfo": "",
-        "drawing": "",
-        "todayreport": "",
-        "projectstaff": "",
-        "material": "",
-        "payment": "",
-        "approval": "",
-        "quotation": ""
-    }
+   "Create_directory": "True",
+   "Public_Folder": [
+      "projectinfo",
+      "drawing",
+      "todayreport",
+      "projectstaff",
+      "material"
+   ],
+   "Private_Folder": [
+      "payment",
+      "approval",
+      "quotation"
+   ],
+   "List_Permission": [
+      "disenothai2b@gmail.com",
+      "Puttipong.lims@gmai.com"
+   ],
+   "Folder_Id": {
+      "projectinfo": "1QC7aAP8wDGAH9l0yXe_ofHQaMej8vhZo",
+      "drawing": "1X6fpyaEdPLKJtEMyPnroBKrPHRVD0t5k",
+      "todayreport": "1-7H0QGmvFNo_5Dqq8oE7NBbWt1p_0Csj",
+      "projectstaff": "17a9KBZfuQI-vzZUFmv8HyrKrPPoP7qsx",
+      "material": "1tL-RlJ709wu_O_Gj6OpqQW2cPTkbu4i2",
+      "payment": "1LjF676ep_Hthy-8z5tdHiWg01Hy-P2Bb",
+      "approval": "1gSAof7hVHEuOvLNIXFdWstvSODqWsANb",
+      "quotation": "14_ik-NvRgpiCgDamuDC4ug9OBX01m89p"
+   }
 }

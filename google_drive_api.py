@@ -3,32 +3,40 @@ from pydrive.drive import GoogleDrive
 from pydrive.files import GoogleDriveFile
 import json
 
+
 gauth = GoogleAuth()
 gauth.LocalWebserverAuth() # Creates local webserver and auto handles authentication.
-
 drive = GoogleDrive(gauth)
+class Project_Gdrive():
 
-def upload_file(folder_name,filetype,filename):
-    with open('Gdrive_Config.json','r') as Config:
-        data = json.load(Config)
-        folder_id = data['Folder_Id'][folder_name]
-        list_permission = data['List_Permission']
+
+    def __init__(self,Proejct_name):
+        with open('Gdrive_Config.json','r') as Config:
+            data = json.load(Config)
+            Config.close()
+        self.Proejct_name = Proejct_name
+        self.data = data
+
+    ### use inside Setup_Gdrive method
+                
+    def upload_file_Public(self,folder_name,filetype,filename):
+        folder_id = self.data['Folder_Id'][folder_name]
+        list_permission = self.data['List_Permission']
     # Create Google Drive instance in Folder
         file1 = drive.CreateFile({'title': '{}.{}'.format(filename,filetype),'parents':[{'id':folder_id}]})
+        ### Sent content from folder data in Project folder
         file1.SetContentFile('data/{}.{}'.format(filename,filetype))
         file1.Upload() # Upload the file.
         file1['shareable'] = False
-        Config.close()
         return file1['title'],file1['alternateLink']
     ### return data to store on Database or Line_FlexMessage
 
-def upload_file_with_permission(folder_name,filetype,filename):
-    with open('Gdrive_Config.json','r') as Config:
-        data = json.load(Config)
-        folder_id = data['Folder_Id'][folder_name]
-        list_permission = data['List_Permission']
+    def upload_file_with_permission(self,folder_name,filetype,filename):
+        folder_id = self.data['Folder_Id'][folder_name]
+        list_permission = self.data['List_Permission']
     # Create Google Drive instance in Folder
         file1 = drive.CreateFile({'title': '{}.{}'.format(filename,filetype),'parents':[{'id':folder_id}]})
+        ### Sent content from folder data in Project folder
         file1.SetContentFile('data/{}.{}'.format(filename,filetype))
         file1.Upload() # Upload the file.
         permission = file1.InsertPermission({
@@ -36,77 +44,60 @@ def upload_file_with_permission(folder_name,filetype,filename):
                             'value': list_permission,
                             'role': 'reader','withLink': False})
         file1['shareable'] = False
-        Config.close()
         return file1['title'],file1['alternateLink']
         ### return data to store on Database or Line_FlexMessage
 
-### Get or Update File List in Fodler Name
-def GetFile_FromDrive(folder_name):
-    All_file_in_folder = {}
-    with open('Gdrive_Config.json','r') as Config:
-        data = json.load(Config)
-        folder_id = data['Folder_Id'][folder_name]
+
+
+    #### SET UP ALL FOLDER AND DIRECTORIES
+    def SetUp_Gdrive_Directory(self):
+        if self.data['Create_directory'] == "False" :
+            ### Public Folder
+            for i in self.data['Public_Folder']:
+                _id , name = self.Create_directory(self.data,i,Type='Public')
+                self.data['Folder_Id'][name] = _id
+
+            ### Public Folder
+            for i in self.data['Private_Folder']:
+                _id , name = self.Create_directory(self.data,i,Type='Private')
+                self.data['Folder_Id'][name] = _id
+            self.data['Create_directory'] = "True"
+        else :
+            self.data['Create_directory'] = "True"
+            return print('directories has been Created')
+    
+    ### Get or Update File List in Fodler Name
+    def GetFile_FromFolder(self,folder_name):
+        All_file_in_folder = {}
+        folder_id = self.data['Folder_Id'][folder_name]
         file_list = drive.ListFile({'q': folder_id}).GetList()
         for i,file1 in enumerate(file_list):
             New_Dict = {i : {"file_name" : file1['title'] , "file_Link" : file1['alternateLink']}}
             New_Dict.update(New_Dict)
-        Config.close()
-    return All_file_in_folder
-### return as json ready to convert into Flex Message List
+        return All_file_in_folder
+    ### return as json ready to convert into Flex Message List
+    
+    def Save_Json_Config(self):
+        with open('Gdrive_Config.json','w') as Config:
+            json.dump(self.data,Config,indent=3)
+            Config.close()
+    #### save json config as a database
 
-
-
-### use inside Setup_Gdrive method
-def Create_directory(name,Type='Public'):
-    data = ""
-    with open('Gdrive_Config.json','r') as Config:
-        data = json.load(Config)
-        Config.close()
+    @staticmethod
+    def Create_directory(data,name,Type='Public'):
         Folder = drive.CreateFile({'title': name,'mimeType' : 'application/vnd.google-apps.folder'})
         if Type == 'Private':
             Folder.Upload()
             Folder['shareable'] = False
-            data['Folder_Id'][name] = Folder['id']
-            print(data['Folder_Id'][name])
+            return Folder['id'] , Folder['title']
             
-        
         elif Type == 'Public':
             Folder.Upload()
             Folder['shareable'] = True
-            data['Folder_Id'][name] = Folder['id']
-            print(data['Folder_Id'][name])
-    print(data)
-    with open('Gdrive_Config.json','w') as Config:
-        json.dump(data,Config)
-        Config.close()
+            return Folder['id'] , Folder['title']
 
-#### SET UP ALL FOLDER AND DIRECTORIES
-
-def SetUp_Gdrive_Directory():
-    data = ""
-    with open('Gdrive_Config.json','r') as Config:
-        data = json.load(Config)
-        Config.close()
-        if data['Create_directory'] == "False" :
-            ### Public Folder
-            for i in data['Public_Folder']:
-                print(i)
-                Create_directory(i,Type='Public')
-            
-            ### Public Folder
-            for i in data['Private_Folder']:
-                print(i)
-                Create_directory(i,Type='Private')
-            data['Create_directory'] = "True"
-        else :
-            data['Create_directory'] = "True"
-            return print('directories has been Created')
-    with open('Gdrive_Config.json','w') as Config:
-        data = json.dump(data,Config,indent=4)
-        Config.close()
-    
-    
 if __name__ == '__main__':
-    #### create folder ได้แต่ไม่สามารถ เก็บค่า id ได้
-    SetUp_Gdrive_Directory()
-
+    
+    project = Project_Gdrive("diseno001")
+    project.SetUp_Gdrive_Directory()
+    project.Save_Json_Config()
