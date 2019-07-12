@@ -22,7 +22,6 @@ class Project_Gdrive():
 ### create instance google drive with authenthication
         
         gauth = GoogleAuth()
-        gauth.LocalWebserverAuth()
 
         gauth.LoadCredentialsFile("credentials.txt")
         if gauth.credentials is None:
@@ -122,5 +121,6 @@ if __name__ == '__main__':
 
     project = Project_Gdrive("diseno001")
     project.SetUp_Gdrive_Directory()
+    project.Save_Json_Config()
 
     ##modified working with subfolder
