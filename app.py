@@ -15,10 +15,16 @@ from linebot.exceptions import (
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,FileMessage
 )
+from flask_sqlalchemy import SQLAlchemy
+
 
 from Download import download_file
 
 app = Flask(__name__)
+db = SQLAlchemy(app)
+from models import create_connection
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(create_connection('Test01'))
 
 # get channel_secret and channel_access_token from your environment variable
 
