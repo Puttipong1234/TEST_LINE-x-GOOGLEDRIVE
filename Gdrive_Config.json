@@ -1,5 +1,11 @@
 {
    "Create_directory": "False",
+
+    "Single_Folder" : [
+        "projectinfo",
+        "todayreport"
+    ],
+
    "Public_Folder": [
        "projectinfo",
        "drawing",

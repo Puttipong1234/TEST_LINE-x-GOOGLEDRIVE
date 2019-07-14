@@ -2,33 +2,36 @@ from datetime import datetime
 import sqlite3
 from sqlite3 import Error
  
- 
-def create_connection(db_file):
-    """ create a database connection to a SQLite database """
-    try:
-        conn = sqlite3.connect(db_file)
-        print(sqlite3.version)
-    except Error as e:
-        print(e)
-    finally:
-        conn.close()
-    return db_file+".sqlite3"
-        
-        
 from app import db
+        
+        
 class Menu(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
+    uri = db.Column(db.String(100), unique=False)
+    file_id = db.Column(db.String(100), unique=False)
 
-    Submenus = db.relationship('Submenu', backref = 'Submenu')
+    Submenus= db.relationship('Submenu', backref='menu')
+
+    def __init__(self,name,uri,file_id):
+        self.name = name
+        self.uri = uri
+        self.file_id = file_id
 
 class Submenu(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True)
+    name = db.Column(db.String(100), unique=False)
+    uri = db.Column(db.String(100), unique=False)
+    file_id = db.Column(db.String(100), unique=False)
+    Menu_id = db.Column(db.Integer,db.ForeignKey('menu.id'))
 
-    Files = db.relationship('File', backref = 'menu')
-
-    Menu_id = db.Column(db.Integer,db.ForeignKey('Menu.id'))
+    def __init__(self,name,uri,file_id,menu):
+        self.name = name
+        self.uri = uri
+        self.file_id = file_id
+        self.menu = menu
+    # Files_id = db.Column(db.Integer, db.ForeignKey('file.id'))
+    Files = db.relationship('File', backref = 'submenu')
     
 
 class File(db.Model):
@@ -37,6 +40,16 @@ class File(db.Model):
     description = db.Column(db.String(200))
     size = db.Column(db.String(200))
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    uri = db.Column(db.String(200),nullable=False,unique=False)
+    uri = db.Column(db.String(200),unique=False)
+    file_id = db.Column(db.String(100), unique=False)
 
-    Submenu_id = db.Column(db.Integer,db.ForeignKey('Submenu.id'))
+    Submenu_id = db.Column(db.Integer,db.ForeignKey('submenu.id'))
+    def __init__(self,name,uri,file_id,submenu):
+        self.name = name
+        self.uri = uri
+        self.file_id = file_id
+        self.submenu = submenu
+
+
+def init_db():
+    db.create_all()

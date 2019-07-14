@@ -2,7 +2,8 @@ from pydrive.drive import GoogleDrive
 from pydrive.files import GoogleDriveFile
 from pydrive.auth import GoogleAuth
 import json
-
+from models import Menu , Submenu , File
+from app import db
 
 ### requirement 
 # - need file Gdrive_Config
@@ -13,14 +14,13 @@ import json
 
 class Project_Gdrive():
 
-    def __init__(self,Proejct_name = 'default'):
+    def __init__(self,Project_name = 'default'):
         self.data = ''
         with open('Gdrive_Config.json','r') as Config:
             self.data = json.load(Config)
             Config.close()
-        self.Proejct_name = Proejct_name
-### create instance google drive with authenthication
-        
+        self.Project_name = Project_name
+### create instance google drive with authenthicate
         gauth = GoogleAuth()
 
         gauth.LoadCredentialsFile("credentials.txt")
@@ -40,22 +40,31 @@ class Project_Gdrive():
     ### use inside Setup_Gdrive method
                 
     def upload_file_Public(self,folder_name,filetype,filename):
-        folder_id = self.data['Folder_Id'][folder_name]
+        Subfolder = Submenu.query.filter_by(name = folder_name).first()
+        Subfolder_id = Subfolder.file_id
         list_permission = self.data['List_Permission']
-    # Create Google Drive instance in Folder
-        file1 = self.drive.CreateFile({'title': '{}.{}'.format(filename,filetype),'parents':[{'id':folder_id}]})
+        # Create Google Drive instance in Folder
+        file1 = self.drive.CreateFile({'title': '{}.{}'.format(filename,filetype),'parents':[{'id':Subfolder_id}]})
         ### Sent content from folder data in Project folder
         file1.SetContentFile('data/{}.{}'.format(filename,filetype))
         file1.Upload() # Upload the file.
-        file1['shareable'] = False
-        return file1['title'],file1['alternateLink']
+        permission = file1.InsertPermission({
+                            'type': 'user',
+                            'value': list_permission,
+                            'role': 'reader','withLink': False})
+        file1['shareable'] = True
+        new_file = File(name = file1['title'],uri = file1['alternateLink'],file_id = file1['id'],submenu = Subfolder)
+        new = db.session.add(new_file)
+        new = db.session.commit()
+        return file1['title'],file1['alternateLink'],file1['id']
     ### return data to store on Database or Line_FlexMessage
 
     def upload_file_with_permission(self,folder_name,filetype,filename):
-        folder_id = self.data['Folder_Id'][folder_name]
+        Subfolder = Submenu.query.filter_by(name = folder_name).first()
+        Subfolder_id = Subfolder.file_id
         list_permission = self.data['List_Permission']
     # Create Google Drive instance in Folder
-        file1 = self.drive.CreateFile({'title': '{}.{}'.format(filename,filetype),'parents':[{'id':folder_id}]})
+        file1 = self.drive.CreateFile({'title': '{}.{}'.format(filename,filetype),'parents':[{'id':Subfolder_id}]})
         ### Sent content from folder data in Project folder
         file1.SetContentFile('data/{}.{}'.format(filename,filetype))
         file1.Upload() # Upload the file.
@@ -64,38 +73,25 @@ class Project_Gdrive():
                             'value': list_permission,
                             'role': 'reader','withLink': False})
         file1['shareable'] = False
-        return file1['title'],file1['alternateLink']
+        new_file = File(name = _file['title'],uri = _file['alternateLink'],file_id = _file['id'],submenu = Subfolder)
+        new =db.session.add(new_file)
+        new =db.session.commit()
+        return file1['title'],file1['alternateLink'],file1['id']
         ### return data to store on Database or Line_FlexMessage
 
-
-
-    #### SET UP ALL FOLDER AND DIRECTORIES
-    # def SetUp_Gdrive_Directory(self):
-    #     if self.data['Create_directory'] == "False" :
-    #         ### Public Folder
-    #         for i in self.data['Public_Folder']:
-    #             _id , name = self.Create_directory(self.data,i,Type='Public')
-    #             for j in self.data[]
-    #             self.data['Folder_Id'][name] = _id
-
-    #         ### Public Folder
-    #         for i in self.data['Private_Folder']:
-    #             _id , name = self.Create_directory(self.data,i,Type='Private')
-    #             self.data['Folder_Id'][name] = _id
-    #         self.data['Create_directory'] = "True"
-    #     else :
-    #         self.data['Create_directory'] = "True"
-    #         return print('directories has been Created')
     
     ### Get or Update File List in Fodler Name
     def GetFile_FromFolderName(self,folder_name):
-        All_file_in_folder = {}
-        folder_id = self.data['Folder_Id'][folder_name]
+        folder = Submenu.query.filter_by(name = folder_name).first()
+        folder_id = folder.file_id
         file_list = self.drive.ListFile({'q': folder_id}).GetList()
-        for i,file1 in enumerate(file_list):
-            New_Dict = {i : {"file_name" : file1['title'] , "file_Link" : file1['alternateLink']}}
-            New_Dict.update(New_Dict)
-        return All_file_in_folder
+        db.session.query(folder).delete()
+        db.session.commit()
+        for i,_file in enumerate(file_list):
+            new_file = File(name = _file['title'],uri = _file['alternateLink'],file_id = _file['id'],submenu = folder)
+            db.session.commit()
+
+
     ### return as json ready to convert into Flex Message List
     
     def Save_Json_Config(self):
@@ -111,12 +107,12 @@ class Project_Gdrive():
         if Type == 'Private':
             Folder.Upload()
             Folder['shareable'] = False
-            return Folder['id'] , Folder['title']
+            return Folder['id'] , Folder['title'] , Folder['alternateLink']
             
         elif Type == 'Public':
             Folder.Upload()
             Folder['shareable'] = True
-            return Folder['id'] , Folder['title']
+            return Folder['id'] , Folder['title'] , Folder['alternateLink']
     
     
     def Create_subdirectory(self,data,name,Type='Public',parent_id=''):
@@ -125,49 +121,51 @@ class Project_Gdrive():
         if Type == 'Private':
             Folder.Upload()
             Folder['shareable'] = False
-            return Folder['id'] , Folder['title']
+            return Folder['id'] , Folder['title'], Folder['alternateLink']
             
         elif Type == 'Public':
             Folder.Upload()
             Folder['shareable'] = True
-            return Folder['id'] , Folder['title']
+            return Folder['id'] , Folder['title'], Folder['alternateLink']
     
     def SetUp_Gdrive_Directory(self):
         if self.data['Create_directory'] == "False" :
+            db.create_all()
             ### Public Folder
             for i in self.data['Public_Folder']:
-                _id , name = self.Create_directory(self.data,i,Type='Public')
+                _id , name , Link = self.Create_directory(self.data,i,Type='Public')
+                new_folder = Menu(name = name , uri = Link , file_id = _id)
+                db.session.add(new_folder)
+                db.session.commit()
+                print('create {}'.format(i))
                 for j in self.data['Subfolder']:
-                    sub__id , sub_name = self.Create_subdirectory(self.data,name+"-"+j,Type='Public',parent_id=_id)
+                    sub_id , sub_name , sub_Link= self.Create_subdirectory(self.data,name+"-"+j,Type='Public',parent_id=_id)
+                    new_subfolder = Submenu(name = sub_name , uri = sub_Link , file_id = sub_id , menu = new_folder)
+                    db.session.add(new_subfolder)
+                    db.session.commit()
+                    print('create {}'.format(j))
+
             ### Private Folder
             for i in self.data['Private_Folder']:
-                _id , name = self.Create_directory(self.data,i,Type='Private')
+                _id , name , Link= self.Create_directory(self.data,i,Type='Private')
+                new_folder = Menu(name = name , uri = Link , file_id = _id)
+                db.session.add(new_folder)
+                db.session.commit()
+                print('create {}'.format(i))
                 for j in self.data['Subfolder']:
-                    sub_id , sub_name = self.Create_subdirectory(self.data,name+"-"+j,Type='Private',parent_id=_id)
+                    sub_id , sub_name , sub_Link = self.Create_subdirectory(self.data,name+"-"+j,Type='Private',parent_id=_id)
+                    new_subfolder = Submenu(name = sub_name , uri = sub_Link , file_id = sub_id , menu = new_folder)
+                    db.session.add(new_subfolder)
+                    db.session.commit()
+                    print('create {}'.format(j))
+
+            self.data['Create_directory'] = "True"
         else:
-            print('directory is already Create')
+            print('directory was already Create')
 
 if __name__ == '__main__':
     
 
-    project = Project_Gdrive("diseno001")
-    
+    project = Project_Gdrive(Project_name="diseno001")
     project.SetUp_Gdrive_Directory()
-
-
-    ##modified working with subfolder
-
-    #create and authorize your drive client object
-    # drive_client = project.drive
-    #Create the folder
-    # If no parent ID is provided this will automatically go to the root or My Drive 'directory'
-    # top_level_folder = drive_client.CreateFile({'title': 'top_level','mimeType' : 'application/vnd.google-apps.folder'})
-    # # Upload the file to your drive
-    # top_level_folder.Upload()
-    # # Grab the ID of the folder we just created
-    # parent_id = top_level_folder['id']
-
-    # # Create a sub-directory
-    # # Make sure to assign it the proper parent ID
-    # child_folder = drive_client.CreateFile({'title': 'level_2', 'parents':[{'id':parent_id}],'mimeType' : 'application/vnd.google-apps.folder'})
-    # child_folder.Upload()
+    project.Save_Json_Config()
